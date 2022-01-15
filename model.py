@@ -102,7 +102,7 @@ def train_model(model, x, y):
 
 
 encoder = get_model()
-load_weights('weights.json', encoder)
-x, y = load_train_data('labelled.csv')
+load_weights('data/weights.json', encoder)
+x, y = load_train_data('data/labelled.csv')
 train_model(encoder, x, y)
 
