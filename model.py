@@ -1,4 +1,5 @@
 import json
+from keras.models import save_model, load_model
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
@@ -12,15 +13,15 @@ def get_model():
 
     :returns: a Keras sequential model
     """
-    encoder_model = keras.Sequential([keras.layers.LSTM(units=128, activation='tanh', return_sequences=True,
-                                                        input_shape=(None, 13)),
-                                      keras.layers.LSTM(units=64, activation='tanh'),
-                                      keras.layers.Dense(10),
-                                      # decoder part
-                                      keras.layers.Dense(1)])
-    encoder_model.compile(optimizer="adam", loss="mean_squared_error")
+    model = keras.Sequential([keras.layers.LSTM(units=128, activation='tanh', return_sequences=True,
+                                                input_shape=(None, 13)),
+                              keras.layers.LSTM(units=64, activation='tanh'),
+                              keras.layers.Dense(10),
+                              # decoder part
+                              keras.layers.Dense(4, activation='softmax')])
+    model.compile(optimizer="adam", loss="mean_squared_error")
 
-    return encoder_model
+    return model
 
 
 def load_weights(file_path, model):
@@ -99,10 +100,3 @@ def train_model(model, x, y):
     # extract a validation set from the data
     x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.15, shuffle=True)
     model.fit(x_train, y_train, epochs=100, batch_size=256, shuffle=True, validation_data=(x_val, y_val))
-
-
-encoder = get_model()
-load_weights('data/weights.json', encoder)
-x, y = load_train_data('data/labelled.csv')
-train_model(encoder, x, y)
-
