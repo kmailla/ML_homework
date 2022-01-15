@@ -1,8 +1,14 @@
 import json
-from keras.models import save_model, load_model
+from keras.callbacks import EarlyStopping
+from keras.models import save_model
+from keras.layers import Dense, LSTM
+from keras.utils.np_utils import to_categorical
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow import keras
+
+PRETRAINED_WEIGHTS_FILE = 'data/weights.json'
+TRAINING_DATA = 'data/labelled.csv'
 
 
 def get_model():
@@ -13,20 +19,19 @@ def get_model():
 
     :returns: a Keras sequential model
     """
-    model = keras.Sequential([keras.layers.LSTM(units=128, activation='tanh', return_sequences=True,
-                                                input_shape=(None, 13)),
-                              keras.layers.LSTM(units=64, activation='tanh'),
-                              keras.layers.Dense(10),
+    model = keras.Sequential([LSTM(units=128, activation='tanh', return_sequences=True, input_shape=(None, 13)),
+                              LSTM(units=64, activation='tanh'),
+                              Dense(10),
                               # decoder part
-                              keras.layers.Dense(4, activation='softmax')])
-    model.compile(optimizer="adam", loss="mean_squared_error")
+                              Dense(4, activation='softmax')])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model
 
 
 def load_weights(file_path, model):
     """
-    Loads weights from the file to a chosen model. It excepts key names consistent to `weights.json`.
+    Loads weights from a file to a chosen model. It excepts key names consistent to `weights.json`.
 
     :param file_path: the path to the file containing the weights
     :param model: a Keras model
@@ -85,18 +90,35 @@ def load_train_data(file_path):
     # convert the nested lists into numpy arrays
     x = np.asarray(x)
     y = np.asarray(y)
+    # one hot encode class labels
+    y = to_categorical(y, num_classes=4)
+
     return x, y
 
 
 def train_model(model, x, y):
     """
-    Loads the training data
+    Trains a model with the accompanying data
 
     :param model: a Keras model
-    :param x: data for training and validation
+    :param x: features for training and validation
     :param y: labels for training and validation
-    :raises valueError: raised if the loaded data does not have the appropriate shape
     """
     # extract a validation set from the data
     x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.15, shuffle=True)
-    model.fit(x_train, y_train, epochs=100, batch_size=256, shuffle=True, validation_data=(x_val, y_val))
+    early_stop = EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=0, mode='auto')
+    model.fit(x_train, y_train, epochs=100, batch_size=256, shuffle=True, validation_data=(x_val, y_val),
+              callbacks=[early_stop])
+
+
+def create_new_model(model_name):
+    """
+    Creates and saves a new model by using the files given in the take home test
+
+    :param model_name: a custom name to use when saving the model
+    """
+    encoder = get_model()
+    load_weights(PRETRAINED_WEIGHTS_FILE, encoder)
+    x, y = load_train_data(TRAINING_DATA)
+    train_model(encoder, x, y)
+    save_model(encoder, './saved_models/' + model_name + '.h5')
