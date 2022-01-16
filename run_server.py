@@ -4,7 +4,7 @@ from keras.models import load_model
 from model import get_encoding_vector
 import numpy as np
 from pydantic import BaseModel
-from typing import Any, List, Optional, Union
+from typing import List, Optional, Union
 import uvicorn
 
 
@@ -57,6 +57,10 @@ def predict(request: Request):
     """
     Reads the arriving requests, processes it into a numpy array and sends the predicted label and probability
     """
+    # check if the model is running
+    if model is None:
+        run_model()
+
     # here we add the third dimension
     data_point = np.asarray([request.data_point])
 
@@ -80,6 +84,7 @@ def predict(request: Request):
 
 
 # load the model and then start the server
+# this function is used when starting the server by executing this python file
 if __name__ == '__main__':
     print("* Loading Keras model and Flask starting server...")
     parser = argparse.ArgumentParser()
