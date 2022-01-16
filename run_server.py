@@ -29,42 +29,45 @@ def predict():
     """
     Reads the arriving requests, processes it into a numpy array and sends the predicted label and probability
     """
-    # initialize the response message
-    data = {'success': False}
+    # the expected input is a JSON
+    json_msg = flask.request.get_json(force=True)
 
-    if flask.request.method == "POST":
-        # the expected input is a JSON
-        json_msg = flask.request.get_json(force=True)
+    if 'data_point' not in json_msg:
+        return flask.jsonify({
+            'success': 'false',
+            'error': "The request should contain 'data_point' as a key"
+        })
 
-        try:
-            # here we add the third dimension
-            data_point = np.asarray([json_msg['data_point']])
-        except KeyError:
-            data['error_msg'] = "The request should contain 'data_point' as a key"
-            return flask.jsonify(data)
+    # here we add the third dimension
+    data_point = np.asarray([json_msg['data_point']])
+    print(data_point)
+    # the prediction only works on numerical arrays
+    if np.isreal(data_point):
+        return flask.jsonify({
+            'success': 'false',
+            'error': "Please make sure that the data_point array only consists of (real) numbers"
+        })
 
-        # only accept the correct shape for the data
-        if data_point.shape != np.zeros((1, 1, 13)).shape:
-            # the error message to the user warns about only two dimensions
-            data['error_msg'] = "Accepted input shape: (1, 13)"
+    # only accept the correct shape for the data
+    if data_point.shape != np.zeros((1, 1, 13)).shape:
+        # the error message to the user warns about only two dimensions
+        return flask.jsonify({
+            'success': 'false',
+            'error': "Accepted input shape: (1, 13)"
+        })
 
-        else:
-            # run prediction and return the most probable label along with the score
-            preds = model.predict(data_point)
-            data['predicted_label'] = int(np.argmax(preds))
-            data['model_score'] = float(max(preds[0]))
+    # run prediction and return the most probable label along with the score
+    preds = model.predict(data_point)
 
-            # add the encoding vector to the message
-            data['encoding_vector'] = get_encoding_vector(model, data_point).tolist()
-
-            # indicate that the request was a success
-            data['success'] = True
-
-    # return the data dictionary as a JSON response
-    return flask.jsonify(data)
+    return flask.jsonify({
+        'success': 'true',
+        'predictedLabel': int(np.argmax(preds)),
+        'modelScore': float(max(preds[0])),
+        'encodingVector': get_encoding_vector(model, data_point).tolist()
+    })
 
 
-# load the model and hen start the server
+# load the model and then start the server
 if __name__ == '__main__':
     print("* Loading Keras model and Flask starting server...")
     parser = argparse.ArgumentParser()
