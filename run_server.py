@@ -1,13 +1,33 @@
 import argparse
+from fastapi import FastAPI
 from keras.models import load_model
 from model import get_encoding_vector
 import numpy as np
-import flask
+from pydantic import BaseModel
+from typing import Any, List, Optional, Union
+import uvicorn
+
 
 # initialize Flask application
-app = flask.Flask(__name__)
+app = FastAPI()
 model = None
 MODEL_PATH = 'saved_models/classifier_model.h5'
+
+
+class HTTPError(BaseModel):
+    success: bool = False
+    error: Optional[str]
+
+
+class Response(BaseModel):
+    success: bool = True
+    predictedLabel: int
+    modelScore: float
+    encodingVector: List[List[float]]
+
+
+class Request(BaseModel):
+    data_point: List[List[Union[int, float]]]
 
 
 def run_model(model_path=MODEL_PATH):
@@ -24,47 +44,39 @@ def run_model(model_path=MODEL_PATH):
     print("Model loaded.")
 
 
-@app.route('/predict', methods=['POST'])
-def predict():
+@app.post('/predict',
+          responses={
+              200: {"model": Response},
+              409: {
+                  "model": HTTPError,
+                  "description": "This endpoint always raises an error",
+              },
+          },
+          )
+def predict(request: Request):
     """
     Reads the arriving requests, processes it into a numpy array and sends the predicted label and probability
     """
-    # the expected input is a JSON
-    json_msg = flask.request.get_json(force=True)
-
-    if 'data_point' not in json_msg:
-        return flask.jsonify({
-            'success': 'false',
-            'error': "The request should contain 'data_point' as a key"
-        })
-
     # here we add the third dimension
-    data_point = np.asarray([json_msg['data_point']])
-    print(data_point)
-    # the prediction only works on numerical arrays
-    if np.isreal(data_point):
-        return flask.jsonify({
-            'success': 'false',
-            'error': "Please make sure that the data_point array only consists of (real) numbers"
-        })
+    data_point = np.asarray([request.data_point])
 
     # only accept the correct shape for the data
     if data_point.shape != np.zeros((1, 1, 13)).shape:
         # the error message to the user warns about only two dimensions
-        return flask.jsonify({
-            'success': 'false',
+        return {
+            'success': False,
             'error': "Accepted input shape: (1, 13)"
-        })
+        }
 
     # run prediction and return the most probable label along with the score
     preds = model.predict(data_point)
 
-    return flask.jsonify({
-        'success': 'true',
+    return {
+        'success': True,
         'predictedLabel': int(np.argmax(preds)),
         'modelScore': float(max(preds[0])),
         'encodingVector': get_encoding_vector(model, data_point).tolist()
-    })
+    }
 
 
 # load the model and then start the server
@@ -77,5 +89,4 @@ if __name__ == '__main__':
     # expecting the model path as a first arg
     custom_model_path = args.model_path
     run_model(custom_model_path)
-    app.config['JSON_AS_ASCII'] = False
-    app.run(port=5002)
+    uvicorn.run(app, host="localhost", port=5002)
