@@ -46,3 +46,23 @@ The above request gets the following response:
   ]
 }
 ```
+
+## Running locally
+The prerequisites for running this project locally is having Python3.9 installed along with python3.9-venv:
+```
+apt install python3.9-venv
+```
+After that, navigate to the root of the project and start the `run.sh` script:
+```
+bash run.sh
+```
+This will create a virtual environment, download the packages needed and also spin up the server on http://localhost:5002
+
+Now we can send an example request:
+```
+curl -X 'POST' \
+  'http://localhost:5002/predict' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{"data_point": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}'`
+```
