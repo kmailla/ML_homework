@@ -1,10 +1,11 @@
 import argparse
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
 from keras.models import load_model
 from model import get_encoding_vector
 import numpy as np
 from pydantic import BaseModel
-from typing import List, Optional, Union
+from typing import List, Union
 import uvicorn
 
 
@@ -16,7 +17,12 @@ MODEL_PATH = 'saved_models/classifier_model.h5'
 
 class HTTPError(BaseModel):
     success: bool = False
-    error: Optional[str]
+    detail: str
+
+    class Config:
+        schema_extra = {
+            "example": {"detail": "Some error occurred"},
+        }
 
 
 class Response(BaseModel):
@@ -28,6 +34,11 @@ class Response(BaseModel):
 
 class Request(BaseModel):
     data_point: List[List[Union[int, float]]]
+
+    class Config:
+        schema_extra = {
+            "example": {"data_point": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]},
+        }
 
 
 def run_model(model_path=MODEL_PATH):
@@ -47,9 +58,8 @@ def run_model(model_path=MODEL_PATH):
 @app.post('/predict',
           responses={
               200: {"model": Response},
-              409: {
-                  "model": HTTPError,
-                  "description": "This endpoint always raises an error",
+              406: {
+                  "model": HTTPError
               },
           },
           )
@@ -67,10 +77,7 @@ def predict(request: Request):
     # only accept the correct shape for the data
     if data_point.shape != np.zeros((1, 1, 13)).shape:
         # the error message to the user warns about only two dimensions
-        return {
-            'success': False,
-            'error': "Accepted input shape: (1, 13)"
-        }
+        raise HTTPException(406, detail="Accepted input shape: (1, 13)")
 
     # run prediction and return the most probable label along with the score
     preds = model.predict(data_point)
