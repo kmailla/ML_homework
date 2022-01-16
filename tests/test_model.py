@@ -1,6 +1,6 @@
 import model as m
+import keras
 import numpy as np
-from tensorflow import keras
 import unittest
 
 
