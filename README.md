@@ -57,7 +57,7 @@ apt install python3.9-venv
 ```
 After that, navigate to the root of the project and start the `run.sh` script:
 ```
-bash run.sh
+bash setup.sh
 ```
 This will create a virtual environment, download the packages needed and also spin up the server on http://localhost:5002
 
