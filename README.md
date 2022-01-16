@@ -14,6 +14,9 @@ The model can be reached through this endpoint: https://ml-homework.herokuapp.co
 
 For documentation, please visit https://ml-homework.herokuapp.com/docs
 
+**Important note:** I'm using a free app on Heroku, so there might be a delay or an error returned when sending the
+first request as the app goes sleeping after 30 minutes of inactivity. Just try again after the first request.
+
 Example request:
 ```
 curl -X 'POST' \
