@@ -7,8 +7,8 @@ from keras.utils.np_utils import to_categorical
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-PRETRAINED_WEIGHTS_FILE = './data/weights.json'
-TRAINING_DATA = './data/labelled.csv'
+PRETRAINED_WEIGHTS_FILE = 'data/weights.json'
+TRAINING_DATA = 'data/labelled.csv'
 
 
 def get_model():

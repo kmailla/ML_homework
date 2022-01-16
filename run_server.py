@@ -1,5 +1,5 @@
 import argparse
-from core.model import get_encoding_vector
+from model import get_encoding_vector
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from keras.models import load_model
@@ -12,7 +12,7 @@ import uvicorn
 # initialize Flask application
 app = FastAPI()
 model = None
-MODEL_PATH = '../saved_models/classifier_model.h5'
+MODEL_PATH = 'saved_models/classifier_model.h5'
 
 
 class HTTPError(BaseModel):

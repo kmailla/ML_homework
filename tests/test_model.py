@@ -1,4 +1,7 @@
-from core import model as m
+try:
+    import model as m
+except ImportError:
+    from .. import model as m
 import keras
 import numpy as np
 import os
