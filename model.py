@@ -49,6 +49,7 @@ def load_weights(file_path, model):
         lstm_0_bias = np.add(weights['LSTM_0_inner_hidden_bias'], weights['LSTM_0_hidden_hidden_bias'])
         lstm_1_bias = np.add(weights['LSTM_1_inner_hidden_bias'], weights['LSTM_1_hidden_hidden_bias'])
 
+        # the weights should be groouped by each layer for Keras' set_weights
         weights_list = [
             [weights['LSTM_0_inner_hidden_kernel'],
              weights['LSTM_0_hidden_hidden_kernel'],
@@ -63,7 +64,25 @@ def load_weights(file_path, model):
         for layer, weights in zip(model.layers, weights_list):
             layer.set_weights(weights)
     except KeyError as e:
-        raise KeyError('Missing key from the loaded weights dict: {}'.format(e.args[0]))
+        raise KeyError("Missing key from the loaded weights dict: {}".format(e.args[0]))
+
+
+def get_encoding_vector(model, input_data):
+    """
+    With a given trained model and input data, it recreates the encoder part of the model and returns its output,
+    the encoding vector.
+
+    :param model: a Keras model
+    :param input_data: a numpy array containing one data point in the shape of (1, 1, 13)
+    """
+    # recreate just the encoder part of the model
+    encoder_model = keras.Sequential()
+    for layer in model.layers[:-1]:
+        encoder_model.add(layer)
+    encoder_model.compile()
+    encoding_vector = encoder_model.predict(input_data)
+
+    return encoding_vector
 
 
 def load_train_data(file_path):
@@ -81,7 +100,7 @@ def load_train_data(file_path):
     for line in lines[1:-1]:
         data_points_str = line.split(',')
         if len(data_points_str) != 14:
-            raise ValueError('Invalid input data shape, expecting 14 data point per line')
+            raise ValueError("Invalid input data shape, expecting 14 data point per line")
         # convert string values to float
         data_points = [float(d) for d in data_points_str]
         x.append([data_points[:-1]])
@@ -106,6 +125,7 @@ def train_model(model, x, y):
     """
     # extract a validation set from the data
     x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.15, shuffle=True)
+
     early_stop = EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=0, mode='auto')
     model.fit(x_train, y_train, epochs=100, batch_size=256, shuffle=True, validation_data=(x_val, y_val),
               callbacks=[early_stop])
