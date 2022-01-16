@@ -14,8 +14,9 @@ The model can be reached through this endpoint: https://ml-homework.herokuapp.co
 
 For documentation, please visit https://ml-homework.herokuapp.com/docs
 
-**Important note:** I'm using a free app on Heroku, so there might be a delay or an error returned when sending the
-first request as the app goes sleeping after 30 minutes of inactivity. Just try again after the first request.
+**Important note:** I'm using a free app on Heroku, so there might be a delay or an application error returned when 
+sending the first request as the app goes sleeping after 30 minutes of inactivity. 
+Just try again after the first request.
 
 Example request:
 ```
@@ -51,11 +52,11 @@ The above request gets the following response:
 ```
 
 ## Running locally
-The prerequisites for running this project locally is having Python3.9 installed along with python3.9-venv:
+The prerequisites for running this project locally is having Python3.8+ installed along with python3-venv:
 ```
-apt install python3.9-venv
+apt install python3-venv
 ```
-After that, navigate to the root of the project and start the `run.sh` script:
+After that, navigate to the root of the project and start the `setup.sh` script:
 ```
 bash setup.sh
 ```
