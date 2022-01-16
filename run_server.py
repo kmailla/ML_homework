@@ -1,6 +1,7 @@
 from keras.models import load_model
 import numpy as np
 import flask
+import sys
 
 # initialize Flask application
 app = flask.Flask(__name__)
@@ -8,26 +9,25 @@ model = None
 MODEL_PATH = './saved_models/encoder.h5'
 
 
-def run_model(model_path):
+def run_model(model_path=MODEL_PATH):
     """
     Loads an existing prediction model
 
-    :param model_path: the path to the saved model
+    :param model_path: the path to the saved model, falls back to a fixed path when not given
     """
     global model
     # load weights into new model
-    loaded_model = load_model(model_path)
-    model = loaded_model
-    print('Model loaded.')
+    model = load_model(model_path)
+    print("Model loaded.")
 
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
     """
     Reads the arriving requests, processes it into a numpy array and sends the predicted label and probability
     """
     # initialize the response message
-    data = {"success": False}
+    data = {'success': False}
 
     if flask.request.method == "POST":
         # the expected input is a JSON
@@ -37,17 +37,16 @@ def predict():
             # here we add the third dimension
             data_point = np.asarray([json_msg['data_point']])
         except KeyError:
-            data['error_msg'] = 'The request should contain data_point as a key'
+            data['error_msg'] = "The request should contain 'data_point' as a key"
             return flask.jsonify(data)
 
         # only accept the correct shape for the data
         if data_point.shape != np.zeros((1, 1, 13)).shape:
             # the error message to the user warns about only two dimensions
-            data['error_msg'] = 'Accepted input shape: (1, 13)'
+            data['error_msg'] = "Accepted input shape: (1, 13)"
 
         else:
-            # classify the input image and then initialize the list
-            # of predictions to return to the client
+            # run prediction and return the most probable label along with the score
             preds = model.predict(data_point)
             data['predicted_label'] = int(np.argmax(preds))
             data['model_score'] = float(max(preds[0]))
@@ -59,11 +58,11 @@ def predict():
     return flask.jsonify(data)
 
 
-# if this is the main thread of execution first load the model and
-# then start the server
-if __name__ == "__main__":
+# load the model and hen start the server
+if __name__ == '__main__':
     print("* Loading Keras model and Flask starting server...")
-
-    run_model(MODEL_PATH)
+    # expecting the model path as a first arg
+    custom_model_path = sys.argv[1]
+    run_model(custom_model_path)
     app.config['JSON_AS_ASCII'] = False
     app.run(port=5002)
