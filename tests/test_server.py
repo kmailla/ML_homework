@@ -1,9 +1,6 @@
+from core import run_server
 import json
 from fastapi.testclient import TestClient
-try:
-    import run_server
-except ImportError:
-    from .. import run_server
 import os
 import unittest
 
