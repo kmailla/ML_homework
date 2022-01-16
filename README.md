@@ -66,3 +66,10 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{"data_point": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}'`
 ```
+
+## Run tests
+In order to run the tests, run the following commands in the root of the project:
+```
+python -m unittest tests.test_model
+python -m unittest tests.test_server
+```
